@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Debate Argument Builder</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 30px;
+    max-width: 700px;
+  }
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1em;
+  }
+  .argument {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-top: 10px;
+  }
+  #summary {
+    margin-top: 30px;
+    background: #f0f0f0;
+    padding: 15px;
+  }
+  .argument-container {
+  margin-top: 20px;
+}
+
+.argument-box {
+  background: #f4f4f8;
+  border-left: 4px solid #4f46e5;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-family: sans-serif;
+  position: relative;
+}
+
+.argument-box strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.argument-box em {
+  font-weight: bold;
+  font-style: normal;
+}
+
+.edit-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #eab308;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.85em;
+  color: white;
+}
+</style>
+</head>
+<body>
+
+<h1>Debate Argument Builder</h1>
+
+
+<label for="topic">Enter your debate topic:</label>
+<input type="text" id="topic" placeholder="e.g. Should school uniforms be mandatory?" />
+
+<label>Select your side:</label>
+<label><input type="radio" name="side" value="Pro" checked /> Pro (For)</label>
+<label><input type="radio" name="side" value="Con" /> Con (Against)</label>
+
+<h2>Add Arguments</h2>
+
+<label for="mainPoint">Main Point:</label>
+<input type="text" id="mainPoint" placeholder="Your main argument point" />
+
+<label for="reason">Reason:</label>
+<input type="text" id="reason" placeholder="Why is this important?" />
+
+<label for="example">Example or Evidence:</label>
+<textarea id="example" rows="3" placeholder="Give an example or evidence"></textarea>
+
+<button id="addArgumentBtn">Add Argument</button>
+<button id="clearAllBtn">Clear All Arguments</button>
+
+<div id="argumentsList"></div>
+
+<button id="showSummaryBtn">Show Summary</button>
+
+<div id="summary"></div>
+
+<script>
+  const addBtn = document.getElementById('addArgumentBtn');
+  const clearBtn = document.getElementById('clearAllBtn');
+  const showSummaryBtn = document.getElementById('showSummaryBtn');
+  const argumentsList = document.getElementById('argumentsList');
+  const summaryDiv = document.getElementById('summary');
+  const topicInput = document.getElementById('topic');
+  const sideRadios = document.getElementsByName('side');
+
+  let argumentsData = JSON.parse(localStorage.getItem('debateArguments')) || {
+    topic: '',
+    side: 'Pro',
+    arguments: []
+  };
+
+  topicInput.value = argumentsData.topic || '';
+  sideRadios.forEach(radio => {
+    if (radio.value === argumentsData.side) {
+      radio.checked = true;
+    }
+  });
+
+  function renderArguments() {
+    argumentsList.innerHTML = '';
+    argumentsData.arguments.forEach((arg, index) => {
+      const div = document.createElement("div");
+      div.className = "argument-box";
+
+      div.innerHTML = `
+        <strong>Argument ${index + 1}:</strong><br>
+        <em>Main Point:</em> ${arg.mainPoint}<br>
+        <em>Reason:</em> ${arg.reason}<br>
+        <em>Example:</em> ${arg.example}
+        <button class="edit-button">Change</button>
+      `;
+
+      div.querySelector(".edit-button").addEventListener("click", () => {
+        document.getElementById("mainPoint").value = arg.mainPoint;
+        document.getElementById("reason").value = arg.reason;
+        document.getElementById("example").value = arg.example;
+
+        argumentsData.arguments.splice(index, 1);
+        saveData();
+        renderArguments();
+      });
+
+      argumentsList.appendChild(div); // ✅ Adds to bottom
+    });
+  }
+
+  function saveData() {
+    localStorage.setItem('debateArguments', JSON.stringify(argumentsData));
+  }
+
+  addBtn.onclick = () => {
+    const mainPoint = document.getElementById('mainPoint').value.trim();
+    const reason = document.getElementById('reason').value.trim();
+    const example = document.getElementById('example').value.trim();
+    const topic = topicInput.value.trim();
+    const side = [...sideRadios].find(r => r.checked).value;
+
+    if (!topic) {
+      alert('Please enter a debate topic.');
+      return;
+    }
+
+    if (!mainPoint || !reason || !example) {
+      alert('Please fill out all argument fields.');
+      return;
+    }
+
+    argumentsData.topic = topic;
+    argumentsData.side = side;
+    argumentsData.arguments.push({ mainPoint, reason, example });
+
+    document.getElementById('mainPoint').value = '';
+    document.getElementById('reason').value = '';
+    document.getElementById('example').value = '';
+
+    saveData();
+    renderArguments();
+    summaryDiv.innerHTML = '';
+  };
+
+  clearBtn.onclick = () => {
+    if (confirm('Clear all arguments?')) {
+      argumentsData.arguments = [];
+      saveData();
+      renderArguments();
+      summaryDiv.innerHTML = '';
+    }
+  };
+
+  showSummaryBtn.onclick = () => {
+    if (!argumentsData.topic) {
+      alert('Please enter a debate topic.');
+      return;
+    }
+
+    if (argumentsData.arguments.length === 0) {
+      alert('Add at least one argument first.');
+      return;
+    }
+
+    const sideText = argumentsData.side === 'Pro' ? 'For' : 'Against';
+    let summaryHTML = `<h3>Debate Topic: ${argumentsData.topic}</h3>`;
+    summaryHTML += `<h4>Side: ${sideText}</h4>`;
+    summaryHTML += `<p><strong>Opening Statement Outline:</strong></p><ol>`;
+
+    argumentsData.arguments.forEach(arg => {
+      summaryHTML += `<li><strong>${arg.mainPoint}</strong><br>
+      Reason: ${arg.reason}<br>
+      Example: ${arg.example}</li>`;
+    });
+
+    summaryHTML += `</ol>`;
+    summaryDiv.innerHTML = summaryHTML;
+  };
+
+  renderArguments();
+</script>
+
+</body>
+</html>

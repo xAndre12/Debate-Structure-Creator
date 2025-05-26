@@ -1,0 +1,12 @@
+.webTitle{
+    font-size: 60px;
+    position: absolute;
+    font-family: sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: auto;
+    top: 0px;
+    left: 0;
+}
